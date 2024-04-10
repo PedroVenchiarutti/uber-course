@@ -2,11 +2,6 @@ import crypto from "crypto";
 import pgp from "pg-promise";
 import { validateCpf } from "./validateCpf";
 
-// code smell
-// codigo morto
-// Espaco em branco
-// Comentario desnecessario
-// Deduplicacao
 
 interface IAccount {
   accountId?: string;
@@ -21,7 +16,8 @@ interface IAccount {
 const connection = pgp()("postgres://postgres:123456@localhost:5432/cccat16");
 
 async function checkUserAlreadyExists(email: string) {
-  if (!email) throw new Error("Invalid email");
+  const isValidEmail = email.match(/^(.+)@(.+)$/)
+  if (!isValidEmail) throw new Error("Invalid email");
   const user = await connection.query(
     "select * from account where email = $1",
     [email]
@@ -50,14 +46,14 @@ export async function signup({
 
     if (!isDriver) {
       const createUserNotDrive = await connection.query(
-        "insert into account (account_id, name, email, cpf, car_plate, is_passenger, is_driver) values ($1, $2, $3, $4, $5, $6, $7)",
+        "insert into account (account_id, name, email, cpf, car_plate, is_passenger, is_driver) values ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
         [id, name, email, cpf, carPlate, !!isPassenger, !isDriver]
       );
       return createUserNotDrive;
     }
 
     const createNewUserDrive = await connection.query(
-      "insert into account (account_id, name, email, cpf, car_plate, is_passenger, is_driver) values ($1, $2, $3, $4, $5, $6, $7)",
+      "insert into account (account_id, name, email, cpf, car_plate, is_passenger, is_driver) values ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
       [id, name, email, cpf, carPlate, !!isPassenger, isDriver]
     );
     return createNewUserDrive;
